@@ -32,7 +32,7 @@ rescue LoadError
 end
 
 # TODO: require these in the files that need them, not in the toplevel
-gem 'hpricot', "~>0.6"
+gem 'hpricot', ">=0.6"
 require 'hpricot'
 
 gem 'htmltools', ">=1.10"
@@ -63,9 +63,9 @@ require 'rfeedparser/loose_feed_parser'
 begin
   require 'rfeedparser/expat_parser'
   StrictFeedParser = FeedParser::Expat::StrictFeedParser
-  
+
 rescue LoadError, NameError
-  
+
   begin
     require 'rfeedparser/libxml_parser'
     StrictFeedParser = FeedParser::LibXML::StrictFeedParser
@@ -80,8 +80,8 @@ require 'rfeedparser/monkey_patches'
 
 module FeedParser
   extend FeedParserUtilities
-  
-  VERSION = "0.9.951"
+
+  VERSION = "0.9.952"
 
   AUTHOR = "Mark Pilgrim <http://diveintomark.org/>"
   PORTER = "Jeff Hodges <http://somethingsimilar.com>"
@@ -146,7 +146,7 @@ module FeedParser
     'hotrss' => 'Hot RSS'
   }
 
-  # Accepted in options: :agent, :modified, :etag, and :referrer 
+  # Accepted in options: :agent, :modified, :etag, and :referrer
   def open_resource(url_file_stream_or_string, options)
     options[:handlers] ||= []
 
@@ -156,11 +156,11 @@ module FeedParser
     elsif url_file_stream_or_string == '-'
       return $stdin
     end
-      
+
     # open-uri freaks out if there's leading spaces.
     url_file_stream_or_string.strip!
-    
-    
+
+
     uri = Addressable::URI.parse(url_file_stream_or_string)
     if uri && ['http','https','ftp'].include?(uri.scheme)
       auth = nil
@@ -171,10 +171,10 @@ module FeedParser
         url_file_stream_or_string = uri.to_s
       end
 
-      req_headers = {} 
+      req_headers = {}
       req_headers["User-Agent"] = options[:agent] || USER_AGENT
       req_headers["If-None-Match"] = options[:etag] if options[:etag]
-      
+
       if options[:modified]
         if options[:modified].is_a?(String)
           req_headers["If-Modified-Since"] = parse_date(options[:modified]).httpdate
@@ -184,15 +184,15 @@ module FeedParser
           req_headers["If-Modified-Since"] = py2rtime(options[:modified]).httpdate
         end
       end
-      
+
       req_headers["Referer"] = options[:referrer] if options[:referrer]
       req_headers["Accept-encoding"] = 'gzip, deflate' # FIXME make tests
       req_headers["Authorization"] = "Basic #{auth}" if auth
       req_headers['Accept'] = ACCEPT_HEADER if ACCEPT_HEADER
-      req_headers['A-IM'] = 'feed' # RFC 3229 support 
-      
+      req_headers['A-IM'] = 'feed' # RFC 3229 support
+
       begin
-        return open(url_file_stream_or_string, req_headers) 
+        return open(url_file_stream_or_string, req_headers)
       rescue OpenURI::HTTPError => e
         return e.io
       rescue
@@ -200,32 +200,32 @@ module FeedParser
     end
 
     # try to open with native open function (if url_file_stream_or_string is a filename)
-    begin 
+    begin
       return open(url_file_stream_or_string)
     rescue
     end
-    # treat url_file_stream_or_string as string          
+    # treat url_file_stream_or_string as string
     return StringIO.new(url_file_stream_or_string.to_s)
   end
   module_function(:open_resource)
-  
+
   # Parse a feed from a URL, file, stream or string
   def parse(url_file_stream_or_string, options = {})
-      
-    
+
+
     # Use the default compatibility if compatible is nil
     $compatible = options[:compatible].nil? ? $compatible : options[:compatible]
 
     strictklass = options[:strict] || StrictFeedParser
     looseklass = options[:loose] || LooseFeedParser
     options[:handlers] = options[:handlers] || []
-    
+
     result = FeedParserDict.new
     result['feed'] = FeedParserDict.new
     result['entries'] = []
-    
+
     result['bozo'] = false
-        
+
     begin
       f = open_resource(url_file_stream_or_string, options)
       data = f.read
@@ -235,7 +235,7 @@ module FeedParser
       data = ''
       f = nil
     end
-    
+
     if f and !(data.nil? || data.empty?) and f.respond_to?(:meta)
       # if feed is gzip-compressed, decompress it
       if f.meta['content-encoding'] == 'gzip'
@@ -262,22 +262,22 @@ module FeedParser
         end
       end
     end
-    
+
     if f.respond_to?(:meta)
       result['etag'] = f.meta['etag']
       result['modified_time'] = parse_date(f.meta['last-modified'])
       result['modified'] = extract_tuple(result['modified_time'])
       result['headers'] = f.meta
     end
-    
-    # FIXME open-uri does not return a non-nil base_uri in its HTTPErrors. 
+
+    # FIXME open-uri does not return a non-nil base_uri in its HTTPErrors.
     if f.respond_to?(:base_uri)
       result['href'] = f.base_uri.to_s # URI => String
       result['status'] = '200'
     end
-    
+
     if f.respond_to?(:status)
-      result['status'] = f.status[0] 
+      result['status'] = f.status[0]
     end
 
 
@@ -303,7 +303,7 @@ module FeedParser
     end
 
     result['version'], data = stripDoctype(data)
-    
+
     baseuri = http_headers['content-location'] || result['href']
     baselang = http_headers['content-language']
 
@@ -340,7 +340,7 @@ module FeedParser
 
     # if no luck and we have auto-detection library, try that
     if not known_encoding and $chardet
-      begin 
+      begin
         proposed_encoding = CharDet.detect(data)['encoding']
         if proposed_encoding and not tried_encodings.include?proposed_encoding
           tried_encodings << proposed_encoding
@@ -408,11 +408,11 @@ module FeedParser
       rescue => err
         $stderr << "xml parsing failed: #{err.message}\n#{err.backtrace.join("\n")}" if $debug
         result['bozo'] = true
-        result['bozo_exception'] = feedparser.exc || e 
+        result['bozo_exception'] = feedparser.exc || e
         use_strict_parser = false
       end
     end
-    
+
     if not use_strict_parser
       $stderr << "Using LooseFeed\n\n" if $debug
       feedparser = looseklass.new(baseuri, baselang, (known_encoding and 'utf-8' or ''))
@@ -432,7 +432,7 @@ def rfp(url_file_stream_or_string, options={})
   FeedParser.parse(url_file_stream_or_string, options)
 end
 
-class Serializer 
+class Serializer
   def initialize(results)
     @results = results
   end
@@ -484,18 +484,18 @@ if $0 == __FILE__
   options.etag = options.modified = options.agent = options.referrer = nil
   options.content_language = options.content_location = options.ctype = nil
   options.format = 'pprint'
-  options.compatible = $compatible 
+  options.compatible = $compatible
   options.verbose = false
 
   opts = OptionParser.new do |opts|
-    opts.banner 
+    opts.banner
     opts.separator ""
     opts.on("-A", "--user-agent [AGENT]",
     "User-Agent for HTTP URLs") {|agent|
       options.agent = agent
     }
 
-    opts.on("-e", "--referrer [URL]", 
+    opts.on("-e", "--referrer [URL]",
     "Referrer for HTTP URLs") {|referrer|
       options.referrer = referrer
     }
@@ -539,7 +539,7 @@ if $0 == __FILE__
   end
 
   opts.parse!(ARGV)
-  $debug = true if options.verbose 
+  $debug = true if options.verbose
   $compatible = options.compatible unless options.compatible.nil?
 
   if options.format == :text
@@ -548,12 +548,12 @@ if $0 == __FILE__
     serializer = PprintSerializer
   end
   args = *ARGV.dup
-  unless args.nil? 
+  unless args.nil?
     args.each do |url| # opts.parse! removes everything but the urls from the command line
-      results = FeedParser.parse(url, :etag => options.etag, 
-      :modified => options.modified, 
-      :agent => options.agent, 
-      :referrer => options.referrer, 
+      results = FeedParser.parse(url, :etag => options.etag,
+      :modified => options.modified,
+      :agent => options.agent,
+      :referrer => options.referrer,
       :content_location => options.content_location,
       :content_language => options.content_language,
       :content_type => options.ctype
