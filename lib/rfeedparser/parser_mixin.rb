@@ -1254,7 +1254,7 @@ module FeedParserMixin
 
   def _end_itunes_explicit
     value = pop('itunes_explicit', false)
-    getContext()['itunes_explicit'] = (value == 'yes') && true || false
+    getContext()['itunes_explicit'] = (value.downcase == 'yes') && true || false
   end
 
 end # End FeedParserMixin
