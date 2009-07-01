@@ -19,7 +19,6 @@ spec = Gem::Specification.new do |s|
   s.files      = FileList["{lib,tests}/**/*"].exclude("rdoc").to_a
   s.require_path      = "lib"
   # s.autorequire       = "feedparser" # tHe 3vil according to Why.
-  s.test_file         = "tests/rfeedparsertest.rb"
   s.has_rdoc          = false # TODO: fix
   s.extra_rdoc_files  = ['README','LICENSE', 'RUBY-TESTING']
   s.rubyforge_project = 'rfeedparser'
@@ -27,21 +26,20 @@ spec = Gem::Specification.new do |s|
   # Dependencies
   s.add_dependency('rchardet', '>=1.1')
   s.add_dependency('hpricot', '~>0.6')
+  s.add_dependency('nokogiri', '~>1.2')
   s.add_dependency('character-encodings', '>= 0.2.0')
   s.add_dependency('htmltools', '>= 1.10')
   s.add_dependency('htmlentities', '4.0.0')
-  s.add_dependency('mongrel', '>=1.0.1')
+  s.add_dependency('mongrel', '>=1.0.2')
   s.add_dependency('addressable', '>= 1.0.4')
-  s.requirements << "Ruby bindings to the Expat XML parser or libxml2 (version 0.8.3 or greater)"
 end
 
-Rake::GemPackageTask.new(spec) do |pkg|
-  pkg.need_zip = true
+Rake::GemPackageTask.new(spec) do
+
 end
 
 Rake::TestTask.new do |t|
-  t.libs << "test"
-  t.test_files = FileList['tests/rfeedparsertest.rb']
+  t.test_files = FileList['tests/rfeedparser_test.rb']
   t.verbose = true
 end
 
@@ -50,8 +48,7 @@ task :default => [:test]
 # Taken liberally from http://blog.labnotes.org/2008/02/28/svn-checkout-rake-setup/
 desc "If you're building from source, run this task first to setup the necessary dependencies."
 task :setup do
-  puts "\nOn top of these gems, you'll also need #{spec.requirements.join(',')}."
-  
+
   puts "Checking for gems that need to be installed."
   gems = Gem::SourceIndex.from_installed_gems
   
